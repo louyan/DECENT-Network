@@ -37,12 +37,13 @@ BrowseContentTab::BrowseContentTab(QWidget* pParent,
    m_pTableWidget->set_columns({
       {tr("Title"), 20},
       {tr("Author"), 15, "author"},
-      {tr("Rating"), 5, "rating"},
-      {tr("Size"), 5, "size"},
       {tr("Price"), 6, "price"},
-      {tr("Uploaded"), 7, "created"},
-      {tr("Expiration"), 7, "expiration"},
-      { " ", 4 }
+      {tr("Rating"), -50, "rating"},
+      {tr("Times bought"), -85 },
+      {tr("Uploaded"), -90, "created"},
+      {tr("Expiration"), -85, "expiration"},
+      {tr("Size"), 5, "size"},
+      { " ", -40 }
    });
 
    QVBoxLayout* pMainLayout = new QVBoxLayout();
@@ -176,7 +177,13 @@ void BrowseContentTab::ShowDigitalContentsGUI() {
       m_pTableWidget->setItem(index, colIndex,new QTableWidgetItem(QString::fromStdString(item.author)));
       m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
       m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
-      
+
+      // Price
+      colIndex++;
+      m_pTableWidget->setItem(index, colIndex, new QTableWidgetItem(item.price.getString()));
+      m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+      m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+
       // Rating
       colIndex++;
       QString rating = QString::number(item.AVG_rating, 'f', 2);
@@ -184,7 +191,27 @@ void BrowseContentTab::ShowDigitalContentsGUI() {
       m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
       m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
       
-      
+      //number of downloads
+      colIndex++;
+      m_pTableWidget->setItem(index,colIndex,new QTableWidgetItem(QString::number(item.times_bought)));
+      m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+      m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+
+      // Uploaded
+      colIndex++;
+      m_pTableWidget->setItem(index, colIndex, new QTableWidgetItem(convertDateToLocale(item.created)));
+      m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+      m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+
+      // Expiration
+      colIndex++;
+      QDateTime time = QDateTime::fromString(QString::fromStdString(item.expiration), "yyyy-MM-ddTHH:mm:ss");
+      std::string e_str = CalculateRemainingTime(QDateTime::currentDateTime(), time);
+
+      m_pTableWidget->setItem(index, colIndex, new QTableWidgetItem(QString::fromStdString(e_str)));
+      m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+      m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+
       // Size
       colIndex++;
       QString unit = " MB";
@@ -196,28 +223,6 @@ void BrowseContentTab::ShowDigitalContentsGUI() {
       }
       
       m_pTableWidget->setItem(index, colIndex,new QTableWidgetItem(QString::number(sizeAdjusted, 'f', 2) + unit));
-      m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
-      m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
-      
-      // Price
-      colIndex++;
-      m_pTableWidget->setItem(index, colIndex, new QTableWidgetItem(item.price.getString()));
-
-      m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
-      m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
-
-      // Uploaded
-      colIndex++;
-      m_pTableWidget->setItem(index, colIndex, new QTableWidgetItem(convertDateToLocale(item.created)));
-      m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
-      m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
-      
-      // Expiration
-      colIndex++;
-      QDateTime time = QDateTime::fromString(QString::fromStdString(item.expiration), "yyyy-MM-ddTHH:mm:ss");
-      std::string e_str = CalculateRemainingTime(QDateTime::currentDateTime(), time);
-      
-      m_pTableWidget->setItem(index, colIndex, new QTableWidgetItem(QString::fromStdString(e_str)));
       m_pTableWidget->item(index, colIndex)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
       m_pTableWidget->item(index, colIndex)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
 

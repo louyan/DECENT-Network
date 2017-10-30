@@ -45,8 +45,8 @@ PurchasedTab::PurchasedTab(QWidget* pParent,
       {tr("Price"), 15, "price"},
       {tr("Purchased"), 15, "purchased"},
       {tr("Status"), 20},
-      {" ", 5},
-      {" ", 5}
+      {" ", -40},
+      {" ", -40}
    });
 
    // the main layout
@@ -218,7 +218,7 @@ void PurchasedTab::ShowDigitalContentsGUI()
       progress *= 100; // Percent
 
       if ((received_download_bytes < total_download_bytes) || !is_delivered) {
-         m_pTableWidget->setItem(iIndex, 5, new QTableWidgetItem(QString::number(progress) + "%"));
+         m_pTableWidget->setItem(iIndex, 5, new QTableWidgetItem(QString::number(static_cast<int>(progress)) + "%"));
          m_pTableWidget->item(iIndex, 5)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
          m_pTableWidget->item(iIndex, 5)->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
       } else {

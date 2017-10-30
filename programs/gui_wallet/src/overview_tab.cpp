@@ -33,9 +33,9 @@ Overview_tab::Overview_tab(QWidget* pParent,
    m_pTableWidget->set_columns({
       {tr("Account ID"), 20, "id"},
       {tr("Account"), 50, "name"},
-      {"", 5},
-      {"", 5},
-      {"", 5}
+      {"", -40 },
+      {"", -40 },
+      {"", -40 }
    });
 
    QVBoxLayout* pMainLayout = new QVBoxLayout();

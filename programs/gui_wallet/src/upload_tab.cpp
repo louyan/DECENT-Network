@@ -41,14 +41,14 @@ Upload_tab::Upload_tab(QWidget* pParent,
 {
    m_pTableWidget->set_columns({
       {tr("Title"), 20},
-      {tr("Rating"), 10, "rating"},
+      {tr("Rating"), -50, "rating"},
       {tr("Size"), 10, "size"},
       {tr("Price"), 10, "price"},
       {tr("Published"), 10, "created"},
       {tr("Expiration"), 10, "expiration"},
       {tr("Status"), 10},
-      {" ", 4},
-      {" ", 4}
+      {" ", -40 },
+      {" ", -40 }
    });
 
    QVBoxLayout* pMainLayout = new QVBoxLayout;
