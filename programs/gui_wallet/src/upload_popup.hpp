@@ -39,7 +39,7 @@ namespace gui_wallet
 
    protected:
       QStringList getChosenPublishers() const;
-      void getContents(std::string const& id,
+      bool getContents(std::string const& id,
                        std::string& hash,
                        std::string& str_expiration,
                        std::string& str_size,
@@ -47,7 +47,7 @@ namespace gui_wallet
                        std::string& str_fee,
                        std::string& str_cd,
                        std::string& uri) const;
-      void getContents(std::string const& id,
+      bool getContents(std::string const& id,
                        std::string& title,
                        std::string& description,
                        std::string& price,

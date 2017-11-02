@@ -24,11 +24,13 @@
 #include <QSignalMapper>
 #include <QLocale>
 #include <QFileInfo>
+#include <QStandardPaths>
 
 #include <graphene/chain/config.hpp>
 #include <graphene/chain/content_object.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
+
 #endif
 
 using std::string;
@@ -66,6 +68,7 @@ Upload_popup::Upload_popup(QWidget* pParent, const std::string& id_modify/* = st
    //
    m_pDescriptionText->setPlaceholderText(tr("Description"));
    m_pDescriptionText->setTabChangesFocus(true);
+   //m_pDescriptionText->setMaxLength(250);
 
    //
    // Lifetime
@@ -255,7 +258,9 @@ Upload_popup::Upload_popup(QWidget* pParent, const std::string& id_modify/* = st
    if (!m_id_modify.empty())
    {
       string title, description, price, expiration;
-      getContents(m_id_modify, title, description, price, expiration);
+      if (!getContents(m_id_modify, title, description, price, expiration)) {
+         throw std::runtime_error("Can't get content!");
+      }
 
       QDateTime time = QDateTime::fromString(QString::fromStdString(expiration), "yyyy-MM-ddTHH:mm:ss");
 
@@ -500,7 +505,10 @@ void Upload_popup::slot_UpdateStatus()
 
 void Upload_popup::slot_BrowseContent()
 {
-   QString contentPathSelected = QFileDialog::getOpenFileName(this, tr("Select content"), "~");
+   QStringList home_location = QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+   Q_ASSERT(!home_location.empty());
+
+   QString contentPathSelected = QFileDialog::getOpenFileName(this, tr("Select content"), home_location.first() );
 
    if (contentPathSelected.isEmpty())
       return;
@@ -517,12 +525,15 @@ void Upload_popup::slot_BrowseContent()
 
 void Upload_popup::slot_BrowseSamples()
 {
-   QString sampleDir = QFileDialog::getExistingDirectory(this, tr("Select samples"), "~", QFileDialog::DontResolveSymlinks);
+   QStringList home_location = QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+   Q_ASSERT(!home_location.empty());
+
+   QString sampleDir = QFileDialog::getExistingDirectory(this, tr("Select samples"), home_location.first(), QFileDialog::DontResolveSymlinks);
 
    emit signal_SamplesPathChange(sampleDir);
 }
    
-void Upload_popup::getContents(string const& id,
+bool Upload_popup::getContents(string const& id,
                                string& hash,
                                string& str_expiration,
                                string& str_size,
@@ -560,9 +571,15 @@ void Upload_popup::getContents(string const& id,
       str_cd += " \"u_seed\": \"" + cd["u_seed"].get<string>() + "\",";
       str_cd += " \"pubKey\": \"" + cd["pubKey"].get<string>() + "\"}";
    }
-   catch(...) {}
+   catch(...) {
+      //TODO: logginig ??
+      return false;
+   }
+
+   return true;
 }
-void Upload_popup::getContents(string const& id,
+
+bool Upload_popup::getContents(string const& id,
                                string& title,
                                string& description,
                                string& price,
@@ -611,7 +628,12 @@ void Upload_popup::getContents(string const& id,
          }
       }
    }
-   catch(...) {}
+   catch(...) {
+      //TODO: logging...
+      return false;
+   }
+
+   return true;
 }
 
 void Upload_popup::slot_UploadContent()
@@ -636,7 +658,7 @@ void Upload_popup::slot_UploadContent()
    synopsis_construct.set<graphene::chain::ContentObjectDescription>(desc);
    std::string synopsis = synopsis_construct.m_str_synopsis;
 
-   string str_seeders = getChosenPublishers().join(", ").toStdString();
+   std::string str_seeders = getChosenPublishers().join(", ").toStdString();
 
    std::string submitCommand;
    
@@ -650,7 +672,11 @@ void Upload_popup::slot_UploadContent()
       string cd;
       string uri;
 
-      getContents(m_id_modify, hash, str_expiration, str_size, str_quorum, str_fee, cd, uri);
+      if (!getContents(m_id_modify, hash, str_expiration, str_size, str_quorum, str_fee, cd, uri)) {
+
+         ShowMessageBox(tr("Error"), tr("Failed to get original content"));
+         return;
+      }
 
       string str_AES_key = Globals::instance().runTask("generate_encryption_key");
       
@@ -702,14 +728,13 @@ void Upload_popup::slot_UploadContent()
       message = ex.what();
    }
 
-   if (message.empty())
+   if (!message.empty())
    {
-      emit accepted();
+      ShowMessageBox(tr("Error"), tr("Failed to submit content"), QString::fromStdString(message));
+      return;
    }
-   else
-   {
-      ShowMessageBox(tr("Error"), tr("Failed to submit content"), message.c_str());
-   }
+
+   emit accepted();
 }
 
 } // end namespace gui_wallet
