@@ -222,15 +222,14 @@ void TransferWidget::Transfer()
       message = ex.what();
    }
    
-   if (message.empty())
+   if (!message.empty())
    {
-      emit accepted();
-      Globals::instance().slot_updateAccountBalance();
+      ShowMessageBox(tr("Error"), tr("Failed to transfer DCT"), QString::fromStdString(message));
+      return;
    }
-   else
-   {
-      ShowMessageBox(tr("Error"), tr("Failed to transfer DCT"), message.c_str());
-   }
+
+   emit accepted();
+   Globals::instance().slot_updateAccountBalance();
 }
 //
 // ImportKeyWidget
@@ -420,12 +419,12 @@ ContentInfoWidget::ContentInfoWidget(QWidget* parent, const SDigitalContent& a_c
    main_layout->addWidget(labelUploadedInfo, iRowIndex, 1);
    ++iRowIndex;
 
-   // Amount
+   // Price
    //
    DecentLabel* labelAmountTitle = new DecentLabel(this, DecentLabel::RowLabel, DecentLabel::Highlighted);
    DecentLabel* labelAmountInfo  = new DecentLabel(this, DecentLabel::RowLabel, DecentLabel::HighlightedRight);
    QString str_price = a_cnt_details.price.getString();
-   labelAmountTitle->setText(tr("Amount"));
+   labelAmountTitle->setText(tr("Price"));
    labelAmountInfo->setText(str_price);
    main_layout->addWidget(labelAmountTitle, iRowIndex, 0);
    main_layout->addWidget(labelAmountInfo, iRowIndex, 1);
