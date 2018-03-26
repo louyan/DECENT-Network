@@ -67,6 +67,7 @@ protected:
    QTimer* m_pTimerDownloads;
    QTimer* m_pTimerBalance;
    QTimer* m_pTimerContents;
+   QTimer* m_pTimerVoting;
    
    QStackedWidget* m_pStackedWidget;
    QComboBox* m_pAccountList;
