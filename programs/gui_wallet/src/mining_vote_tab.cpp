@@ -15,9 +15,9 @@
 #include <QDate>
 #include <QTime>
 #include <QTimer>
-#include <QSignalMapper>
 #include <QLabel>
 #include <QLineEdit>
+#include <QCheckBox>
 #include <QDesktopServices>
 
 #include <graphene/chain/content_object.hpp>
@@ -26,15 +26,15 @@
 
 #endif
 
-using std::string;
-
 namespace gui_wallet {
 
 const char* g_vote_state_id = "vote-state";
 
 
-MinerVotingTab::MinerVotingTab(QWidget *pParent, DecentLineEdit *pFilterLineEdit) : TabContentManager(pParent),
-       m_pTableWidget(new DecentTable(this))
+MinerVotingTab::MinerVotingTab(QWidget *pParent, DecentLineEdit *pFilterLineEdit, QCheckBox* pOnlyMyVotes)
+      : TabContentManager(pParent),
+      m_pTableWidget(new DecentTable(this)),
+      m_onlyMyVotes(false)
 {
    m_pTableWidget->set_columns({
                                    {tr("Miner"),             15, "name"},
@@ -58,6 +58,11 @@ MinerVotingTab::MinerVotingTab(QWidget *pParent, DecentLineEdit *pFilterLineEdit
       this->setFilterWidget(pFilterLineEdit);
    }
 
+   if (pOnlyMyVotes) {
+      QObject::connect(pOnlyMyVotes, &QCheckBox::stateChanged, this, &MinerVotingTab::slot_onlyMyVotes);
+
+   }
+
    QObject::connect(m_pTableWidget, &DecentTable::signal_SortingChanged,
                     this, &MinerVotingTab::slot_SortingChanged);
 
@@ -69,7 +74,9 @@ MinerVotingTab::~MinerVotingTab() = default;
 void MinerVotingTab::timeToUpdate(const std::string& result)
 {
    if (result.empty()) {
-      m_pTableWidget->setRowCount(0);
+      while(m_pTableWidget->rowCount() > 0) {
+         m_pTableWidget->removeRow(0);
+      }
       return;
    }
 
@@ -79,18 +86,25 @@ void MinerVotingTab::timeToUpdate(const std::string& result)
       iSize = m_i_page_size;
 
    m_buttonsToIndex.clear();
-   m_pTableWidget->setRowCount(iSize);
+   m_indexToUrl.clear();
+
+   //clear table
+   while(m_pTableWidget->rowCount() > 0) {
+      m_pTableWidget->removeRow(0);
+   }
 
    try {
+
+      m_pTableWidget->setRowCount(iSize);
 
       for (size_t iIndex = 0; iIndex < iSize; ++iIndex) {
          auto const &content = contents[iIndex];
 
-         string name = content["name"].get<string>();
-         string url = content["url"].get<string>();
+         std::string name = content["name"].get<std::string>();
+         std::string url = content["url"].get<std::string>();
          uint64_t total_votes;
          if (content["total_votes"].is_string() ) {
-            total_votes = std::stoull(content["total_votes"].get<string>());
+            total_votes = std::stoull(content["total_votes"].get<std::string>());
          }
          else {
             total_votes = content["total_votes"].get<uint64_t>();
@@ -100,10 +114,12 @@ void MinerVotingTab::timeToUpdate(const std::string& result)
          QTableWidgetItem *tabItem;
          tabItem = new QTableWidgetItem(QString::fromStdString(name));
          tabItem->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+         tabItem->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
          m_pTableWidget->setItem(iIndex, 0, tabItem);
 
          tabItem = new QTableWidgetItem(QString::fromStdString(url));
          tabItem->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+         tabItem->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
          m_pTableWidget->setItem(iIndex, 1, tabItem);
          if (!url.empty()) {
             m_indexToUrl.insert(iIndex, QString::fromStdString(url));
@@ -111,6 +127,7 @@ void MinerVotingTab::timeToUpdate(const std::string& result)
 
          tabItem = new QTableWidgetItem(QString::number(total_votes));
          tabItem->setTextAlignment(Qt::AlignRight|Qt::AlignVCenter);
+         tabItem->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
          m_pTableWidget->setItem(iIndex, 2, tabItem);
 
          // Vote Button
@@ -142,25 +159,26 @@ void MinerVotingTab::timeToUpdate(const std::string& result)
    QObject::connect(m_pTableWidget, &DecentTable::cellClicked, this, &MinerVotingTab::slot_cellClicked);
 
    if (contents.size() > m_i_page_size)
-      set_next_page_iterator(contents[m_i_page_size]["id"].get<string>());
+      set_next_page_iterator(contents[m_i_page_size]["id"].get<std::string>());
    else
-      set_next_page_iterator(string());
+      set_next_page_iterator(std::string());
 
 }
 
 std::string MinerVotingTab::getUpdateCommand()
 {
-   string currentUserName = Globals::instance().getCurrentUser();
+   std::string currentUserName = Globals::instance().getCurrentUser();
    if (currentUserName.empty())
-      return string();
+      return std::string();
 
    graphene::chain::ContentObjectPropertyManager type_composer;
    graphene::chain::ContentObjectTypeValue type(graphene::chain::EContentObjectApplication::DecentCore);
-   string str_type;
+   std::string str_type;
    type.to_string(str_type);
 
    return "search_miner_voting "
                   "\"" + m_strSearchTerm.toStdString() + "\" "
+                  + (m_onlyMyVotes ? "true " : "false ") +
                   "\"" + m_pTableWidget->getSortedColumn() + "\" "
                   "\"" + currentUserName + "\" "
                   "\"" + next_iterator() + "\" "
@@ -187,6 +205,12 @@ void MinerVotingTab::slot_cellClicked(int row, int col)
    if (find != m_indexToUrl.end()) {
       QDesktopServices::openUrl(QUrl(find.value()));
    }
+}
+
+void MinerVotingTab::slot_onlyMyVotes(int state)
+{
+   m_onlyMyVotes = (state == Qt::Checked);
+   reset(true);
 }
 
 void MinerVotingTab::slot_MinerVote()
