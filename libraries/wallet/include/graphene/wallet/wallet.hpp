@@ -517,6 +517,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_message_objects)
         (get_messages)
         (get_sent_messages)
+   )
 
 #if 0
         //Debug
@@ -532,6 +533,4 @@ FC_API( graphene::wallet::wallet_api,
         //Network
         (flood_network)
 #endif
-
-)
 
