@@ -53,6 +53,7 @@ protected slots:
    void slot_ConnectingUpdate(const QString& time_text, int);
    void slot_BlockchainUpdate(int value, int max);
    void slot_MinerVotingToggled(bool toggled);
+   void slot_advancedMinerVoting();
 
    void DisplayWalletContentGUI();
 
@@ -102,6 +103,7 @@ protected:
    QAction* m_pActionImportKey;
    QAction* m_pActionReplayBlockchain;
    QAction* m_pActionResyncBlockchain;
+   QAction* m_pAdvancedMinerVoting;
 
    UpdateManager* m_pUpdateManager;
 
